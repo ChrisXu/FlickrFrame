@@ -12,7 +12,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let window = UIWindow(frame: UIScreen.main.bounds)
         self.window = window
         
-        let rootViewController = PhotoListViewController()
+        let viewModel = PhotoListViewModel()
+        let rootViewController = PhotoListViewController(viewModel: viewModel)
         window.rootViewController = rootViewController
         
         window.makeKeyAndVisible()
