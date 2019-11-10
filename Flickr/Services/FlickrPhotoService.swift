@@ -13,9 +13,9 @@ class FlickrPhotoService {
         static let feeds = "/services/feeds/photos_public.gne"
     }
     
-    let session: URLSession
+    let session: URLSessionProtocol
     
-    init(session: URLSession) {
+    init(session: URLSessionProtocol) {
         self.session = session
     }
     
@@ -84,7 +84,7 @@ class FlickrPhotoService {
     
     typealias ImageData = Data
     
-    func loadPhoto(at url: URL, usingCache: Bool = true, completion: ((Result<ImageData, Swift.Error>) -> Void)?) -> URLSessionDataTask? {
+    func loadPhoto(at url: URL, usingCache: Bool = true, completion: ((Result<ImageData, Swift.Error>) -> Void)?) -> URLSessionTaskProtocol? {
         
         let cachePolicy: NSURLRequest.CachePolicy = usingCache ? .returnCacheDataElseLoad : .reloadIgnoringLocalCacheData
         let request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 15)
