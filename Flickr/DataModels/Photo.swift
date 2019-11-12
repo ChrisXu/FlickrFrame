@@ -1,11 +1,21 @@
 import UIKit
 
-class Photo {
-    let url: URL
+struct Photo {
     
-    var image: UIImage?
-    
-    init(url: URL) {
-        self.url = url
+    enum CodingKeys: String, CodingKey {
+        case secret, farm, server
+        case identifier = "id"
     }
+    
+    let identifier: String
+    
+    let secret: String
+    
+    let farm: Int
+    
+    let server: String
 }
+
+extension Photo: Codable { }
+
+extension Photo: Equatable { }

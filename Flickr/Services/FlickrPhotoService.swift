@@ -8,40 +8,20 @@ class FlickrPhotoService {
         case unauthorized(String)
     }
     
-    private struct FlickrAPI {
-        static let baseURL = "https://www.flickr.com"
-        static let feeds = "/services/feeds/photos_public.gne"
-    }
-    
     let session: URLSessionProtocol
+    
+    private let timeoutInterval: TimeInterval = 15
     
     init(session: URLSessionProtocol) {
         self.session = session
     }
     
-    func fetchPhotos(with keywords: [String] = [], complection: @escaping (Result<[Photo], Swift.Error>) -> Void) {
+    func fetchPhotos(with keywords: [String] = [], at page: Int = 1, complection: @escaping (Result<PhotoCollection, Swift.Error>) -> Void) {
         
         do {
-            guard var urlComponents = URLComponents(string: FlickrAPI.baseURL) else {
-                throw FlickrPhotoService.Error.invalid("BaseURL is invalid")
-            }
+            let url = try FlickrAPI.urlForSearch(keywords, page: page)
             
-            urlComponents.path = FlickrAPI.feeds
-            
-            var items = [URLQueryItem]()
-            let tags = keywords.joined(separator: ",")
-            if !tags.isEmpty {
-                items.append(URLQueryItem(name: "tags", value: tags))
-            }
-            items.append(URLQueryItem(name: "format", value: "json"))
-            items.append(URLQueryItem(name: "nojsoncallback", value: "1"))
-            urlComponents.queryItems = items
-            
-            guard let url = urlComponents.url else {
-                throw FlickrPhotoService.Error.invalid("Cannot construct valid url")
-            }
-            
-            let request = URLRequest(url: url, cachePolicy: .reloadIgnoringCacheData, timeoutInterval: 15)
+            let request = URLRequest(url: url, cachePolicy: .reloadIgnoringCacheData, timeoutInterval: timeoutInterval)
             let task = session.dataTask(with: request) { (data, response, error) in
                 
                 do {
@@ -59,18 +39,8 @@ class FlickrPhotoService {
                         throw FlickrPhotoService.Error.notFound("data is missing")
                     }
                     
-                    let object = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
-                    
-                    guard let json = object as? [String: Any] else {
-                        throw FlickrPhotoService.Error.invalid("Invalid json")
-                    }
-                    
-                    guard let items = json["items"] as? [[String: Any]] else {
-                        throw FlickrPhotoService.Error.notFound("Cannot decode data - missing media")
-                    }
-                    
-                    let photos = try items.map { try Photo(json: $0) }
-                    complection(Result.success(photos))
+                    let collection = try JSONDecoder().decode(PhotoCollection.self, from: data)
+                    complection(Result.success(collection))
                 } catch {
                     complection(Result.failure(error))
                 }        
@@ -84,10 +54,10 @@ class FlickrPhotoService {
     
     typealias ImageData = Data
     
-    func loadPhoto(at url: URL, usingCache: Bool = true, completion: ((Result<ImageData, Swift.Error>) -> Void)?) -> URLSessionTaskProtocol? {
+    @discardableResult
+    func loadPhoto(at url: URL, completion: ((Result<ImageData, Swift.Error>) -> Void)?) -> URLSessionTaskProtocol? {
         
-        let cachePolicy: NSURLRequest.CachePolicy = usingCache ? .returnCacheDataElseLoad : .reloadIgnoringLocalCacheData
-        let request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 15)
+        let request = URLRequest(url: url, timeoutInterval: timeoutInterval)
         
         let task = session.dataTask(with: request) { (data
             , response, error) in
@@ -142,25 +112,5 @@ private extension HTTPURLResponse {
             // 3xx (Redirection): Further action needs to be taken in order to complete the request
             throw FlickrPhotoService.Error.invalid("\(statusCode) - Undefined statusCode") 
         }
-    }
-}
-
-private extension Photo {
-    
-    convenience init(json: [String: Any]) throws {
-        
-        guard let media = json["media"] as? [String: String] else {
-            throw FlickrPhotoService.Error.notFound("Cannot decode data - missing media")
-        }
-        
-        guard let firstURL = media.first?.value else {
-            throw FlickrPhotoService.Error.notFound("Cannot decode data - missing photo URL")
-        }
-        
-        guard let url = URL(string: firstURL) else {
-            throw FlickrPhotoService.Error.invalid("Cannot decode data - \(firstURL) is invalid url")
-        }
-        
-        self.init(url: url)
     }
 }

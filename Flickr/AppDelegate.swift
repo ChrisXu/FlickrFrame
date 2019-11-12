@@ -4,6 +4,10 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    
+    lazy var urlSession: URLSessionProtocol = {
+        return URLSession.shared
+    }()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
@@ -12,8 +16,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let window = UIWindow(frame: UIScreen.main.bounds)
         self.window = window
         
-        let viewModel = PhotoListViewModel()
-        let rootViewController = PhotoListViewController(viewModel: viewModel)
+        let rootViewModel = PhotoListViewModel(urlSession: urlSession)
+        let photoListViewController = PhotoListViewController(viewModel: rootViewModel)
+        let rootViewController = UINavigationController(rootViewController: photoListViewController)
         window.rootViewController = rootViewController
         
         window.makeKeyAndVisible()
@@ -23,9 +28,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     // MARK: - Private methods
     
-    func setUpCache() {
+    private func setUpCache() {
         URLCache.shared.diskCapacity = 2 * 1024 * 1024 * 1024 // 2 GB
-        URLCache.shared.memoryCapacity = 1024 * 1024 * 1024 // 1 GB
+        URLCache.shared.memoryCapacity = 500 * 1024 * 1024 // 500 MB
     }
 }
-
