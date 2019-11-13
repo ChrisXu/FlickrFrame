@@ -2,7 +2,7 @@
 A photo frame which displays photos from Flickr in three column
 
 ## Requirements
-- Xcode 10.3
+- Xcode 10.3 or later
 - Support iOS 10 or later
     
 ## Architecture 
@@ -32,4 +32,5 @@ It's a pity that I don't have time left to implement any UITests. But each custo
 ## Improvements
     
 - Although the test-coverage is **61%**, there are still quite some test cases like errors and loading images that need to be covered.
-- The application needs to handle the error state and empty state on the photo list.
+- The application needs to handle the error state and empty state on the photo list
+- Secure the `api_key`
